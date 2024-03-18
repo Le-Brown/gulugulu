@@ -3,6 +3,6 @@ Gulugulu drink-maker made by Xu Le and Zhou Mingyuan, which is The special prize
 
 **Finished product schematic:**
 
-![成品](J:\Xule\科创\gulugulu\img\成品.png)
+![成品](\img\成品.png)
 
 Please refer to the project report for project details.
