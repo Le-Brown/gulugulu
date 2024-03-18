@@ -1,0 +1,1531 @@
+#include <TimerOne.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include"String.h"
+#include<Arduino.h>
+#include"SoftwareSerial.h"
+
+#define OLED_RESET  4
+Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
+SoftwareSerial softserial(11,12);
+
+//前缀solid代表固体加料器，liquid代表液体加料器，lift代表升降器，spin代表搅拌器，arm代表机械臂，heat代表加热器
+
+//-----------------------------字模-----------------------------
+static const unsigned char PROGMEM yang[] =  //杨
+{0x10,0x00,0x11,0xF8,0x10,0x10,0x10,0x20,0xFC,0x40,0x10,0x80,0x31,0xFE,0x38,0x92,
+ 0x54,0x92,0x54,0x92,0x91,0x12,0x11,0x22,0x12,0x22,0x14,0x42,0x10,0x94,0x11,0x08};/*"杨"*/
+
+static const unsigned char PROGMEM zhi[] =  //枝
+{0x10,0x20,0x10,0x20,0x10,0x20,0x13,0xFE,0xFC,0x20,0x10,0x20,0x30,0x20,0x39,0xFC,
+ 0x54,0x84,0x54,0x88,0x90,0x48,0x10,0x50,0x10,0x20,0x10,0x50,0x11,0x88,0x16,0x06};/*"枝"*/
+
+static const unsigned char PROGMEM gan[] =  //甘
+{0x08,0x10,0x08,0x10,0x08,0x10,0x08,0x10,0x7F,0xFE,0x08,0x10,0x08,0x10,0x08,0x10,
+ 0x08,0x10,0x0F,0xF0,0x08,0x10,0x08,0x10,0x08,0x10,0x08,0x10,0x0F,0xF0,0x08,0x10};/*"甘"*/
+
+static const unsigned char PROGMEM lu[] =  //露
+{0x3F,0xF8,0x01,0x00,0x7F,0xFE,0x41,0x02,0x9D,0x74,0x01,0x00,0x1D,0x70,0x00,0x40,
+ 0x7C,0xF8,0x45,0x48,0x7C,0x30,0x11,0xCE,0x5C,0x00,0x50,0xF8,0x5C,0x88,0xE0,0xF8};/*"露"*/
+
+static const unsigned char PROGMEM tao[] =  //桃
+{0x10,0x90,0x10,0x90,0x10,0x90,0x12,0x92,0xFD,0x94,0x10,0x98,0x30,0x90,0x39,0x98,
+ 0x56,0x94,0x54,0x92,0x90,0x90,0x10,0x90,0x11,0x12,0x11,0x12,0x12,0x12,0x14,0x0E};/*"桃"*/
+
+static const unsigned char PROGMEM qing[] =  //请
+{0x00,0x40,0x40,0x40,0x27,0xFC,0x20,0x40,0x03,0xF8,0x00,0x40,0xE7,0xFE,0x20,0x00,
+ 0x23,0xF8,0x22,0x08,0x23,0xF8,0x22,0x08,0x2B,0xF8,0x32,0x08,0x22,0x28,0x02,0x10};/*"请"*/
+
+static const unsigned char PROGMEM xuan[] =  //选
+{0x00,0x40,0x22,0x40,0x12,0x40,0x13,0xF8,0x04,0x40,0x00,0x40,0xF7,0xFC,0x11,0x20,
+ 0x11,0x20,0x11,0x20,0x12,0x24,0x12,0x24,0x14,0x1C,0x28,0x00,0x47,0xFE,0x00,0x00};/*"选"*/
+
+static const unsigned char PROGMEM ze[] =  //择
+{0x20,0x00,0x27,0xF8,0x22,0x08,0x21,0x10,0xF0,0xA0,0x20,0x40,0x21,0xB0,0x26,0x4E,
+ 0x30,0x40,0xE3,0xF8,0x20,0x40,0x20,0x40,0x27,0xFC,0x20,0x40,0xA0,0x40,0x40,0x40};/*"择"*/
+
+static const unsigned char PROGMEM yin[] =  //饮
+{0x20,0x40,0x20,0x40,0x20,0x40,0x3E,0x7C,0x44,0x84,0x48,0x88,0x81,0x20,0x10,0x20,
+ 0x10,0x20,0x10,0x50,0x10,0x50,0x12,0x50,0x14,0x88,0x18,0x88,0x11,0x04,0x02,0x02};/*"饮"*/
+
+static const unsigned char PROGMEM pin[] =  //品
+{0x00,0x00,0x1F,0xF0,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x1F,0xF0,0x00,0x00,
+ 0x00,0x00,0x7C,0x7C,0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x7C,0x7C,0x44,0x44};/*"品"*/
+
+static const unsigned char PROGMEM xiao[] =  //小
+{0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x11,0x10,0x11,0x08,0x11,0x04,
+ 0x21,0x04,0x21,0x02,0x41,0x02,0x81,0x02,0x01,0x00,0x01,0x00,0x05,0x00,0x02,0x00};/*"小"*/
+
+static const unsigned char PROGMEM liao[] =  //料
+{0x08,0x08,0x08,0x88,0x4A,0x48,0x2A,0x48,0x2C,0x08,0x08,0x88,0xFE,0x48,0x18,0x48,
+ 0x1C,0x08,0x2A,0x0E,0x2A,0xF8,0x48,0x08,0x88,0x08,0x08,0x08,0x08,0x08,0x08,0x08};/*"料"*/
+
+static const unsigned char PROGMEM fen[] =  //份
+{0x08,0x10,0x08,0x90,0x08,0x90,0x10,0x88,0x11,0x08,0x31,0x04,0x32,0x04,0x55,0xFA,
+ 0x90,0x88,0x10,0x88,0x10,0x88,0x10,0x88,0x11,0x08,0x11,0x08,0x12,0x28,0x14,0x10};/*"份"*/
+
+static const unsigned char PROGMEM shu[] =  //数
+{0x08,0x20,0x49,0x20,0x2A,0x20,0x08,0x3E,0xFF,0x44,0x2A,0x44,0x49,0x44,0x88,0xA4,
+ 0x10,0x28,0xFE,0x28,0x22,0x10,0x42,0x10,0x64,0x28,0x18,0x28,0x34,0x44,0xC2,0x82};/*"数"*/
+
+static const unsigned char PROGMEM xi[] =  //西
+{0x00,0x00,0xFF,0xFE,0x04,0x40,0x04,0x40,0x04,0x40,0x3F,0xF8,0x24,0x48,0x24,0x48,
+ 0x24,0x48,0x24,0x48,0x28,0x38,0x30,0x08,0x20,0x08,0x20,0x08,0x3F,0xF8,0x20,0x08};/*"西"*/
+
+static const unsigned char PROGMEM mi[] =  //米
+{0x01,0x00,0x21,0x08,0x11,0x08,0x09,0x10,0x09,0x20,0x01,0x00,0x7F,0xFC,0x03,0x80,
+ 0x05,0x40,0x05,0x40,0x09,0x20,0x11,0x10,0x21,0x08,0xC1,0x06,0x01,0x00,0x01,0x00};/*"米"*/
+
+static const unsigned char PROGMEM bo[] =  //啵
+{0x00,0x10,0x04,0x10,0x72,0x10,0x52,0xFE,0x58,0x92,0x54,0x94,0x54,0x90,0x52,0xFC,
+ 0x52,0xA4,0x54,0xA4,0x7C,0xA8,0x54,0xA8,0x04,0x90,0x05,0x28,0x05,0x44,0x02,0x82};/*"啵"*/
+
+static const unsigned char PROGMEM mang[] =  //芒
+{0x08,0x20,0x08,0x20,0xFF,0xFE,0x08,0x20,0x08,0x20,0x02,0x00,0x01,0x00,0xFF,0xFE,
+ 0x08,0x00,0x08,0x00,0x08,0x00,0x08,0x00,0x08,0x00,0x08,0x00,0x0F,0xFC,0x00,0x00};/*"芒"*/
+
+static const unsigned char PROGMEM guo[] =  //果
+{0x00,0x00,0x1F,0xF0,0x11,0x10,0x11,0x10,0x1F,0xF0,0x11,0x10,0x11,0x10,0x1F,0xF0,
+ 0x11,0x10,0x01,0x00,0xFF,0xFE,0x05,0x40,0x09,0x20,0x31,0x18,0xC1,0x06,0x01,0x00};/*"果"*/
+
+static const unsigned char PROGMEM ye[] =  //椰
+{0x20,0x00,0x2F,0xDE,0x24,0x92,0x24,0x92,0xF4,0x94,0x27,0x94,0x24,0x98,0x74,0x94,
+ 0x6F,0x92,0xA4,0x92,0xA4,0x92,0x25,0xDA,0x2E,0x94,0x20,0x90,0x20,0x90,0x20,0x90};/*"椰"*/
+
+static const unsigned char PROGMEM tang[] =  //糖
+{0x10,0x20,0x10,0x10,0x95,0xFE,0x55,0x10,0x59,0x7C,0x11,0x14,0xFD,0xFE,0x31,0x14,
+ 0x39,0x7C,0x55,0x10,0x55,0x7C,0x91,0x44,0x11,0x44,0x12,0x44,0x12,0x7C,0x14,0x44};/*"糖"*/
+
+static const unsigned char PROGMEM jiang[] =  //浆
+{0x08,0x40,0x48,0x40,0x28,0xFC,0x09,0x04,0x1A,0x88,0x28,0x50,0x48,0x60,0x89,0x80,
+ 0x01,0x04,0x7D,0x88,0x05,0x50,0x09,0x20,0x11,0x10,0x21,0x08,0xC5,0x06,0x02,0x00};/*"浆"*/
+
+static const unsigned char PROGMEM shi[] =  //是
+{0x1F,0xF0,0x10,0x10,0x10,0x10,0x1F,0xF0,0x10,0x10,0x10,0x10,0x1F,0xF0,0x00,0x00,
+ 0xFF,0xFE,0x01,0x00,0x11,0x00,0x11,0xF8,0x11,0x00,0x29,0x00,0x45,0x00,0x83,0xFE};/*"是"*/
+
+static const unsigned char PROGMEM fou[] =  //否
+{0x00,0x00,0x7F,0xFC,0x00,0x80,0x01,0x00,0x03,0x00,0x05,0x60,0x09,0x18,0x31,0x04,
+ 0xC1,0x02,0x00,0x00,0x1F,0xF0,0x10,0x10,0x10,0x10,0x10,0x10,0x1F,0xF0,0x10,0x10};/*"否"*/
+
+static const unsigned char PROGMEM jia[] =  //加
+{0x10,0x00,0x10,0x00,0x10,0x00,0x10,0x7C,0xFE,0x44,0x12,0x44,0x12,0x44,0x12,0x44,
+ 0x12,0x44,0x12,0x44,0x12,0x44,0x12,0x44,0x22,0x44,0x22,0x7C,0x4A,0x44,0x84,0x00};/*"加"*/
+
+static const unsigned char PROGMEM re[] =  //热
+{0x10,0x40,0x10,0x40,0x10,0x40,0xFD,0xF8,0x10,0x48,0x10,0x48,0x1C,0xC8,0x30,0x48,
+ 0xD0,0xAA,0x10,0xAA,0x51,0x06,0x22,0x02,0x00,0x00,0x48,0x88,0x44,0x44,0x84,0x44};/*"热"*/
+
+static const unsigned char PROGMEM zi[] =  //子
+{0x00,0x00,0x7F,0xF8,0x00,0x10,0x00,0x20,0x00,0x40,0x01,0x80,0x01,0x00,0xFF,0xFE,
+ 0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x05,0x00,0x02,0x00};/*"子"*/
+
+static const unsigned char PROGMEM du[] =  //度
+{0x01,0x00,0x00,0x80,0x3F,0xFE,0x22,0x20,0x22,0x20,0x3F,0xFC,0x22,0x20,0x22,0x20,
+ 0x23,0xE0,0x20,0x00,0x2F,0xF0,0x24,0x10,0x42,0x20,0x41,0xC0,0x86,0x30,0x38,0x0E};/*"度"*/
+
+static const unsigned char PROGMEM chang[] =  //常
+{0x01,0x00,0x11,0x10,0x09,0x20,0x7F,0xFE,0x40,0x02,0x9F,0xF4,0x10,0x10,0x1F,0xF0,
+ 0x01,0x00,0x3F,0xF8,0x21,0x08,0x21,0x08,0x21,0x28,0x21,0x10,0x01,0x00,0x01,0x00};/*"常"*/
+
+static const unsigned char PROGMEM wen[] =  //温
+{0x00,0x00,0x23,0xF8,0x12,0x08,0x12,0x08,0x83,0xF8,0x42,0x08,0x42,0x08,0x13,0xF8,
+ 0x10,0x00,0x27,0xFC,0xE4,0xA4,0x24,0xA4,0x24,0xA4,0x24,0xA4,0x2F,0xFE,0x00,0x00};/*"温"*/
+
+static const unsigned char PROGMEM yang_yang[] = //杨阳码
+{0xEF,0xFF,0xEE,0x07,0xEF,0xEF,0xEF,0xDF,0x03,0xBF,0xEF,0x7F,0xCE,0x01,0xC7,0x6D,
+0xAB,0x6D,0xAB,0x6D,0x6E,0xED,0xEE,0xDD,0xED,0xDD,0xEB,0xBD,0xEF,0x6B,0xEE,0xF7};
+
+static const unsigned char PROGMEM zhi_yang[] =   //枝阳码
+{0xEF,0xDF,0xEF,0xDF,0xEF,0xDF,0xEC,0x01,0x03,0xDF,0xEF,0xDF,0xCF,0xDF,0xC6,0x03,
+0xAB,0x7B,0xAB,0x77,0x6F,0xB7,0xEF,0xAF,0xEF,0xDF,0xEF,0xAF,0xEE,0x77,0xE9,0xF9};
+
+static const unsigned char PROGMEM gan_yang[] = //甘阳码
+{0xF7,0xEF,0xF7,0xEF,0xF7,0xEF,0xF7,0xEF,0x80,0x01,0xF7,0xEF,0xF7,0xEF,0xF7,0xEF,
+0xF7,0xEF,0xF0,0x0F,0xF7,0xEF,0xF7,0xEF,0xF7,0xEF,0xF7,0xEF,0xF0,0x0F,0xF7,0xEF};
+
+static const unsigned char PROGMEM lu_yang[] = //露阳码
+{0xC0,0x07,0xFE,0xFF,0x80,0x01,0xBE,0xFD,0x62,0x8B,0xFE,0xFF,0xE2,0x8F,0xFF,0xBF,
+0x83,0x07,0xBA,0xB7,0x83,0xCF,0xEE,0x31,0xA3,0xFF,0xAF,0x07,0xA3,0x77,0x1F,0x07};
+
+static const unsigned char PROGMEM tao_yang[] = //桃阳码
+{0xEF,0x6F,0xEF,0x6F,0xEF,0x6F,0xED,0x6D,0x02,0x6B,0xEF,0x67,0xCF,0x6F,0xC6,0x67,
+0xA9,0x6B,0xAB,0x6D,0x6F,0x6F,0xEF,0x6F,0xEE,0xED,0xEE,0xED,0xED,0xED,0xEB,0xF1};
+
+static const unsigned char PROGMEM chang_yang[] = //常阳码
+{0xFE,0xFF,0xEE,0xEF,0xF6,0xDF,0x80,0x01,0xBF,0xFD,0x60,0x0B,0xEF,0xEF,0xE0,0x0F,
+0xFE,0xFF,0xC0,0x07,0xDE,0xF7,0xDE,0xF7,0xDE,0xD7,0xDE,0xEF,0xFE,0xFF,0xFE,0xFF};
+
+static const unsigned char PROGMEM wen_yang[] = //温阳码
+{0xFF,0xFF,0xDC,0x07,0xED,0xF7,0xED,0xF7,0x7C,0x07,0xBD,0xF7,0xBD,0xF7,0xEC,0x07,
+0xEF,0xFF,0xD8,0x03,0x1B,0x5B,0xDB,0x5B,0xDB,0x5B,0xDB,0x5B,0xD0,0x01,0xFF,0xFF};
+
+static const unsigned char PROGMEM re_yang[] = //热阳码
+{0xEF,0xBF,0xEF,0xBF,0xEF,0xBF,0x02,0x07,0xEF,0xB7,0xEF,0xB7,0xE3,0x37,0xCF,0xB7,
+0x2F,0x55,0xEF,0x55,0xAE,0xF9,0xDD,0xFD,0xFF,0xFF,0xB7,0x77,0xBB,0xBB,0x7B,0xBB};
+
+static const unsigned char PROGMEM zero_yang[] = //0阳码
+{0xFF,0xFF,0xFF,0xE7,0xDB,0xBD,0xBD,0xBD,0xBD,0xBD,0xBD,0xBD,0xDB,0xE7,0xFF,0xFF};
+
+static const unsigned char PROGMEM one_yang[] = //1阳码
+{0xFF,0xFF,0xFF,0xF7,0xC7,0xF7,0xF7,0xF7,0xF7,0xF7,0xF7,0xF7,0xF7,0xC1,0xFF,0xFF};
+
+static const unsigned char PROGMEM two_yang[] = //2阳码
+{0xFF,0xFF,0xFF,0xC3,0xBD,0xBD,0xBD,0xFD,0xFB,0xF7,0xEF,0xDF,0xBD,0x81,0xFF,0xFF};
+
+static const unsigned char PROGMEM wu[] =  //无
+{0x00,0x00,0x3F,0xF0,0x02,0x00,0x02,0x00,0x02,0x00,0x02,0x00,0x7F,0xFC,0x04,0x80,
+ 0x04,0x80,0x04,0x80,0x08,0x80,0x08,0x80,0x10,0x84,0x20,0x84,0x40,0x7C,0x80,0x00};/*"无"*/
+
+static const unsigned char PROGMEM ban[] =  //半
+{0x01,0x00,0x21,0x08,0x11,0x08,0x09,0x10,0x09,0x20,0x01,0x00,0x3F,0xF8,0x01,0x00,
+ 0x01,0x00,0x01,0x00,0xFF,0xFE,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00};/*"半"*/
+
+static const unsigned char PROGMEM quan[] =  //全
+{0x01,0x00,0x01,0x00,0x02,0x80,0x04,0x40,0x08,0x20,0x10,0x10,0x2F,0xE8,0xC1,0x06,
+ 0x01,0x00,0x01,0x00,0x1F,0xF0,0x01,0x00,0x01,0x00,0x01,0x00,0x7F,0xFC,0x00,0x00};/*"全"*/
+
+static const unsigned char PROGMEM zhi_waiting[] =  //制
+{0x04,0x04,0x24,0x04,0x24,0x04,0x3F,0xA4,0x44,0x24,0x04,0x24,0xFF,0xE4,0x04,0x24,
+ 0x04,0x24,0x3F,0xA4,0x24,0xA4,0x24,0xA4,0x26,0x84,0x25,0x04,0x04,0x14,0x04,0x08};
+
+static const unsigned char PROGMEM zuo_waiting[] =  //作
+{0x09,0x00,0x09,0x00,0x09,0x00,0x11,0xFE,0x12,0x80,0x32,0x80,0x34,0x80,0x50,0xF8,
+ 0x90,0x80,0x10,0x80,0x10,0x80,0x10,0xFC,0x10,0x80,0x10,0x80,0x10,0x80,0x10,0x80};
+
+static const unsigned char PROGMEM ji_waiting[] =  //即
+{0x00,0x00,0x7E,0x7C,0x42,0x44,0x42,0x44,0x7E,0x44,0x42,0x44,0x42,0x44,0x7E,0x44,
+ 0x40,0x44,0x48,0x44,0x44,0x54,0x4A,0x48,0x52,0x40,0x60,0x40,0x00,0x40,0x00,0x40};
+
+static const unsigned char PROGMEM jiang_waiting[] =  //将
+{0x08,0x80,0x08,0xF8,0x09,0x08,0x4A,0x10,0x28,0xA0,0x28,0x40,0x08,0x90,0x0B,0x10,
+ 0x18,0x10,0x2B,0xFE,0xC8,0x10,0x09,0x10,0x08,0x90,0x08,0x10,0x08,0x50,0x08,0x20};
+
+static const unsigned char PROGMEM wan_waiting[] =  //完
+{0x02,0x00,0x01,0x00,0x7F,0xFE,0x40,0x02,0x80,0x04,0x1F,0xF0,0x00,0x00,0x00,0x00,
+ 0x7F,0xFC,0x04,0x40,0x04,0x40,0x04,0x40,0x08,0x44,0x08,0x44,0x10,0x44,0x60,0x3C};
+
+static const unsigned char PROGMEM cheng_waiting[] =  //成
+{0x00,0x50,0x00,0x48,0x00,0x40,0x3F,0xFE,0x20,0x40,0x20,0x40,0x20,0x44,0x3E,0x44,
+ 0x22,0x44,0x22,0x28,0x22,0x28,0x22,0x12,0x2A,0x32,0x44,0x4A,0x40,0x86,0x81,0x02};
+
+static const unsigned char PROGMEM nin_waiting[] =  //您
+{0x09,0x00,0x09,0x00,0x11,0xFC,0x32,0x04,0x54,0x48,0x99,0x50,0x11,0x48,0x12,0x44,
+ 0x14,0x44,0x11,0x40,0x10,0x80,0x02,0x00,0x51,0x04,0x51,0x12,0x90,0x12,0x0F,0xF0};
+
+static const unsigned char PROGMEM nai_waiting[] =  //耐
+{0x00,0x08,0xFF,0x88,0x08,0x08,0x08,0x08,0x10,0xFE,0x7F,0x08,0x55,0x08,0x55,0x08,
+ 0x55,0x48,0x55,0x28,0x55,0x28,0x55,0x08,0x55,0x08,0x55,0x08,0x41,0x28,0x43,0x10};
+
+static const unsigned char PROGMEM xin_waiting[] =  //心
+{0x00,0x00,0x02,0x00,0x01,0x00,0x00,0x80,0x00,0x80,0x04,0x00,0x04,0x08,0x24,0x04,
+ 0x24,0x04,0x24,0x02,0x44,0x02,0x44,0x12,0x84,0x10,0x04,0x10,0x03,0xF0,0x00,0x00};
+
+static const unsigned char PROGMEM deng_waiting[] =  //等
+{0x20,0x40,0x3F,0x7E,0x48,0x90,0x85,0x08,0x01,0x00,0x3F,0xF8,0x01,0x00,0x01,0x00,
+ 0xFF,0xFE,0x00,0x00,0x00,0x20,0x7F,0xFC,0x08,0x20,0x04,0x20,0x04,0xA0,0x00,0x40};
+
+static const unsigned char PROGMEM dai_waiting[] =  //待
+{0x08,0x40,0x08,0x40,0x10,0x40,0x23,0xFC,0x48,0x40,0x08,0x40,0x17,0xFE,0x30,0x10,
+ 0x50,0x10,0x97,0xFE,0x10,0x10,0x12,0x10,0x11,0x10,0x11,0x10,0x10,0x50,0x10,0x20};
+
+static const unsigned char PROGMEM zhu_waiting[] =  //祝
+{0x20,0x00,0x13,0xFC,0x12,0x04,0xFA,0x04,0x0A,0x04,0x12,0x04,0x13,0xFC,0x38,0x90,
+ 0x54,0x90,0x94,0x90,0x10,0x90,0x11,0x12,0x11,0x12,0x12,0x12,0x14,0x0E,0x18,0x00};
+
+static const unsigned char PROGMEM sheng_waiting[] =  //生
+{0x01,0x00,0x11,0x00,0x11,0x00,0x11,0x00,0x3F,0xFC,0x21,0x00,0x41,0x00,0x81,0x00,
+ 0x01,0x00,0x3F,0xF8,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0xFF,0xFE,0x00,0x00};
+
+static const unsigned char PROGMEM huo_waiting[] =  //活
+{0x00,0x10,0x20,0x78,0x13,0xC0,0x10,0x40,0x80,0x40,0x47,0xFE,0x40,0x40,0x10,0x40,
+ 0x10,0x40,0x23,0xF8,0xE2,0x08,0x22,0x08,0x22,0x08,0x22,0x08,0x23,0xF8,0x02,0x08};
+
+static const unsigned char PROGMEM yu_waiting[] =  //愉
+{0x10,0x40,0x10,0xA0,0x11,0x10,0x12,0x08,0x1D,0xF6,0x54,0x00,0x53,0xC4,0x52,0x54,
+ 0x92,0x54,0x13,0xD4,0x12,0x54,0x12,0x54,0x13,0xD4,0x12,0x44,0x12,0x54,0x12,0xC8};
+
+static const unsigned char PROGMEM kuai_waiting[] =  //快
+{0x10,0x40,0x10,0x40,0x10,0x40,0x13,0xF8,0x18,0x48,0x54,0x48,0x50,0x48,0x50,0x48,
+ 0x97,0xFE,0x10,0x40,0x10,0xA0,0x10,0xA0,0x11,0x10,0x11,0x10,0x12,0x08,0x14,0x06};
+
+static const unsigned char PROGMEM yi_waiting[] =  //已
+{0x00,0x00,0x3F,0xF0,0x00,0x10,0x00,0x10,0x00,0x10,0x20,0x10,0x20,0x10,0x3F,0xF0,
+ 0x20,0x00,0x20,0x00,0x20,0x00,0x20,0x04,0x20,0x04,0x20,0x04,0x1F,0xFC,0x00,0x00};
+
+static const unsigned char PROGMEM tang_yang[] =  //糖阳码
+{0xEF,0xDF,0xEF,0xEF,0x6A,0x01,0xAA,0xEF,0xA6,0x83,0xEE,0xEB,0x02,0x01,0xCE,0xEB,
+ 0xC6,0x83,0xAA,0xEF,0xAA,0x83,0x6E,0xBB,0xEE,0xBB,0xED,0xBB,0xED,0x83,0xEB,0xBB};/*"糖"*/
+
+static const unsigned char PROGMEM wu_yang[] =  //无阳码
+{0xFF,0xFF,0xC0,0x0F,0xFD,0xFF,0xFD,0xFF,0xFD,0xFF,0xFD,0xFF,0x80,0x03,0xFB,0x7F,
+ 0xFB,0x7F,0xFB,0x7F,0xF7,0x7F,0xF7,0x7F,0xEF,0x7B,0xDF,0x7B,0xBF,0x83,0x7F,0xFF};/*"无"*/
+
+static const unsigned char PROGMEM ban_yang[] =  //半阳码
+{0xFE,0xFF,0xDE,0xF7,0xEE,0xF7,0xF6,0xEF,0xF6,0xDF,0xFE,0xFF,0xC0,0x07,0xFE,0xFF,
+ 0xFE,0xFF,0xFE,0xFF,0x00,0x01,0xFE,0xFF,0xFE,0xFF,0xFE,0xFF,0xFE,0xFF,0xFE,0xFF};/*"半"*/
+
+static const unsigned char PROGMEM quan_yang[] =  //全阳码
+{0xFE,0xFF,0xFE,0xFF,0xFD,0x7F,0xFB,0xBF,0xF7,0xDF,0xEF,0xEF,0xD0,0x17,0x3E,0xF9,
+ 0xFE,0xFF,0xFE,0xFF,0xE0,0x0F,0xFE,0xFF,0xFE,0xFF,0xFE,0xFF,0x80,0x03,0xFF,0xFF};/*"全"*/
+
+static const unsigned char PROGMEM dian_choose[] =  //点
+{0x02,0x00,0x02,0x00,0x02,0x00,0x03,0xFC,0x02,0x00,0x02,0x00,0x3F,0xF0,0x20,0x10,
+ 0x20,0x10,0x20,0x10,0x3F,0xF0,0x00,0x00,0x24,0x88,0x22,0x44,0x42,0x44,0x80,0x04};/*"点"*/
+
+static const unsigned char PROGMEM dan_choose[] =  //单
+{0x10,0x10,0x08,0x20,0x04,0x40,0x3F,0xF8,0x21,0x08,0x21,0x08,0x3F,0xF8,0x21,0x08,
+ 0x21,0x08,0x3F,0xF8,0x01,0x00,0x01,0x00,0xFF,0xFE,0x01,0x00,0x01,0x00,0x01,0x00};/*"单"*/
+
+static const unsigned char PROGMEM mo_choose[] =  //模
+{0x11,0x10,0x11,0x10,0x17,0xFC,0x11,0x10,0xFC,0x00,0x13,0xF8,0x32,0x08,0x3B,0xF8,
+ 0x56,0x08,0x53,0xF8,0x90,0x40,0x17,0xFC,0x10,0xA0,0x11,0x10,0x12,0x08,0x14,0x06};/*"模"*/
+
+static const unsigned char PROGMEM shi_choose[] =  //式
+{0x00,0x48,0x00,0x44,0x00,0x44,0x00,0x40,0xFF,0xFE,0x00,0x40,0x00,0x40,0x3E,0x40,
+ 0x08,0x40,0x08,0x40,0x08,0x20,0x08,0x22,0x0F,0x12,0x78,0x0A,0x20,0x06,0x00,0x02};/*"式"*/
+
+static const unsigned char PROGMEM wang_choose[] =  //网
+{0x00,0x00,0x7F,0xFC,0x40,0x04,0x40,0x04,0x42,0x14,0x52,0x94,0x4A,0x54,0x44,0x24,
+ 0x44,0x24,0x4A,0x54,0x4A,0x54,0x52,0x94,0x61,0x04,0x40,0x04,0x40,0x14,0x40,0x08};/*"网"*/
+
+static const unsigned char PROGMEM ye_choose[] =  //页
+{0x00,0x00,0x7F,0xFC,0x02,0x00,0x04,0x00,0x1F,0xF0,0x10,0x10,0x11,0x10,0x11,0x10,
+ 0x11,0x10,0x11,0x10,0x11,0x10,0x12,0x90,0x02,0x40,0x04,0x20,0x18,0x10,0x60,0x08};/*"页"*/
+
+static const unsigned char PROGMEM xian_choose[] =  //显
+{0x00,0x00,0x1F,0xF0,0x10,0x10,0x10,0x10,0x1F,0xF0,0x10,0x10,0x10,0x10,0x1F,0xF0,
+ 0x04,0x40,0x44,0x44,0x24,0x44,0x14,0x48,0x14,0x50,0x04,0x40,0xFF,0xFE,0x00,0x00};/*"显"*/
+
+static const unsigned char PROGMEM shi_choose1[] =  //示
+{0x00,0x00,0x3F,0xF8,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xFF,0xFE,0x01,0x00,
+ 0x01,0x00,0x11,0x10,0x11,0x08,0x21,0x04,0x41,0x02,0x81,0x02,0x05,0x00,0x02,0x00};/*"示"*/
+
+static const unsigned char PROGMEM ping_choose[] =  //屏
+{0x00,0x00,0x3F,0xF8,0x20,0x08,0x20,0x08,0x3F,0xF8,0x24,0x10,0x22,0x20,0x2F,0xF8,
+ 0x22,0x20,0x22,0x20,0x3F,0xFC,0x22,0x20,0x42,0x20,0x44,0x20,0x84,0x20,0x08,0x20};/*"屏"*/
+
+static const unsigned char PROGMEM wang_choose_yang[] =  //网阳码
+{0xFF,0xFF,0x80,0x03,0xBF,0xFB,0xBF,0xFB,0xBD,0xEB,0xAD,0x6B,0xB5,0xAB,0xBB,0xDB,
+ 0xBB,0xDB,0xB5,0xAB,0xB5,0xAB,0xAD,0x6B,0x9E,0xFB,0xBF,0xFB,0xBF,0xEB,0xBF,0xF7};/*"网",阳*/
+
+static const unsigned char PROGMEM ye_choose_yang[] =  //页阳码
+{0xFF,0xFF,0x80,0x03,0xFD,0xFF,0xFB,0xFF,0xE0,0x0F,0xEF,0xEF,0xEE,0xEF,0xEE,0xEF,
+ 0xEE,0xEF,0xEE,0xEF,0xEE,0xEF,0xED,0x6F,0xFD,0xBF,0xFB,0xDF,0xE7,0xEF,0x9F,0xF7};/*"页",阳*/
+
+static const unsigned char PROGMEM xian_choose_yang[] =  //显阳码
+{0xFF,0xFF,0xE0,0x0F,0xEF,0xEF,0xEF,0xEF,0xE0,0x0F,0xEF,0xEF,0xEF,0xEF,0xE0,0x0F,
+ 0xFB,0xBF,0xBB,0xBB,0xDB,0xBB,0xEB,0xB7,0xEB,0xAF,0xFB,0xBF,0x00,0x01,0xFF,0xFF};/*"显",阳*/
+
+static const unsigned char PROGMEM shi_choose_yang[] =  //示阳码
+{0xFF,0xFF,0xC0,0x07,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x01,0xFE,0xFF,
+ 0xFE,0xFF,0xEE,0xEF,0xEE,0xF7,0xDE,0xFB,0xBE,0xFD,0x7E,0xFD,0xFA,0xFF,0xFD,0xFF};/*"示",阳*/
+
+static const unsigned char PROGMEM ping_choose_yang[] =  //屏阳码
+{0xFF,0xFF,0xC0,0x07,0xDF,0xF7,0xDF,0xF7,0xC0,0x07,0xDB,0xEF,0xDD,0xDF,0xD0,0x07,
+ 0xDD,0xDF,0xDD,0xDF,0xC0,0x03,0xDD,0xDF,0xBD,0xDF,0xBB,0xDF,0x7B,0xDF,0xF7,0xDF};/*"屏",阳*/
+
+//---------------------------引脚分配---------------------------
+int arm_PUL = 2;      //机械臂步进电机
+int arm_DIR = 3;     
+int lift_PUL = 4;     //升降器步进电机。
+int lift_DIR = 5; 
+
+int spin_ENA = 6;     //搅拌器L298N
+int solidA_ENA = 9;   //固体加料器A、B的L298N
+int solidB_ENB = 10;
+int solidC_ENA = 7;   //固体加料器C、D的L298N
+int solidD_ENB = 8;
+int liquidA_ENA = 14; //液体加料器（牛奶）蠕动泵1,2的L298N
+int liquidB_ENB = 15;
+int liquidC_ENA = 13; //液体加料器（牛奶）蠕动泵3的L298N
+int liquidD_ENA = 22; //液体加料器（椰浆、糖浆）的L298N
+int liquidE_ENB = 23;
+int heat_ENA = 24;    //加热垫的L298N
+
+
+int VRX = 0;          //摇杆模块的x轴、y轴、按键
+int VRY = 1;
+int SW = 19;
+
+int trigpin = 26;     //超声波模块
+int echopin = 27;
+/*
+  备注：
+  1. oled模块scl，sda分别与mega板的21,20号引脚相连
+*/
+
+//---------------------------全局变量---------------------------
+int interval = 10000;    //定时器中断间隔：0.1s
+int microstep_time = 0;   //步进电机从上到下一共18步
+int milktime = 6000;         //加牛奶的时间！！待测试的参数
+int syruptime = 6000;        //加一份糖浆的时间 ！！待测试的参数
+int coconuttime = 6000;      //加一份椰浆的时间 ！！待测试的参数
+int heattime = 20000;         //加热需要的时间 ！！待测试的参数
+double dist=100;          //超声波传感器测得的水面距传感器的距离
+double min_dist=10;       //超声波允许的最近距离 ！！待测试的参数
+int Type=1;             //1代表杨枝甘露，2代表桃桃甘露
+int Sago=1;             //西米的份数
+int Bobo=1;             //啵啵的份数
+int Mango=1;            //芒果的份数
+int Peach=0;            //桃子的份数
+int Syrup=1;            //糖浆的份数
+int Coconut=1;          //椰浆的份数
+int Tempe=0;            //0代表常温，1代表热
+
+int x=500;                //代表x轴的位置
+int y=500;                //代表y轴的位置
+int lastx=500;
+int lasty=500;
+
+int sw=1;               //代表sw的状态（1未按下，0按下）
+
+int choose1 = 1;      //main_menu界面当前选项
+int choose2 = 1;      //ximi_menu界面当前选项
+int times=0;
+int wififlag=0;
+int mode=0;           //1代表线下点单，0代表线上点单
+
+//---------------------------函数声明---------------------------
+void set_L298N();           //设置所有L298N
+void set_MicroStepDriver(); //设置所有步进电机驱动器
+void set_others();          //设置其他模块
+void set_oled();            //设置oled显示屏
+
+void choosing();            //菜单选择集成函数
+void Isr();                 //定时器中断函数
+void swt();                 //外部中断函数，摇杆按下时中断
+void get_dist();            //测量液面距离
+void start_spin();          //让搅拌电机工作
+void microstep_go_up();     //丝杆向上
+void microstep_go_down();   //丝杆向下
+
+void spin();                        //搅拌器工作1次
+void add_solid(int ENA,int num);    //固体加料器加num份料，参数为加料器引脚
+void add_syrup(int num);            //加糖器加num份糖
+void add_milk();
+void add_coconut();
+void heat(int flag);                //加热器（0不工作，1工作）
+void heat_open();
+void heat_close();
+void arm_rotate(double angle);      //机械臂顺时针旋转angle度，单位deg
+void make_drink(int type,int sago,int bobo,int mango,int peach,int syrup,int tempe);
+
+void main_menu();                 //选择饮品菜单
+void main_menu2();
+void ximi_menu();
+void ximi_menu1();
+void ximi_menu2();
+void bobo_menu();
+void bobo_menu1();
+void bobo_menu2();
+void peach_menu();
+void peach_menu1();
+void peach_menu2();
+void mango_menu();
+void mango_menu1();
+void mango_menu2();
+void heat_menu();
+void heat_menu1();
+void sugar_menu1();
+void sugar_menu2();
+void sugar_menu3();
+void waiting_menu();
+void finished_menu();
+void online();
+void offline();
+
+void syrup_menu();                //以下的menu和display函数待补充
+void syrup_menu1();
+void syrup_menu2();
+void making_display();
+void over_display();
+void decode_str(String info);
+void choose_mode();
+
+void setup() {
+  Serial.begin(9600);
+  //Serial1.begin(9600);
+  softserial.begin(9600);
+  set_L298N();
+  set_MicroStepDriver();
+  set_others();
+  set_oled();
+  Timer1.initialize(interval);
+  Timer1.attachInterrupt(Isr);
+  attachInterrupt(4,swt,FALLING);
+}
+
+
+
+void loop() {
+  //Serial.print("begin\n");
+  //heat_close();
+  add_syrup(10);
+  choose_mode();
+  if(mode==1){
+    choosing();
+    Timer1.detachInterrupt();
+  }
+  else if(mode==0){
+    Timer1.detachInterrupt();
+    wififlag=0;
+    while(wififlag==0){
+      if(softserial.available()){
+        String ch=softserial.readString();
+        Serial.println(ch);
+        if(ch[0]=='#'){
+          decode_str(ch);
+          wififlag=1;
+          waiting_menu();
+        }
+      }
+    }
+  }
+  //add_solid(solidD_ENB,1);
+  //spin();
+  //arm_rotate(45);
+  //add_milk();
+  if(Tempe==1){
+    heat_open();
+  }
+  
+  Serial.print("Making");
+  Serial.println(Tempe);
+  make_drink(Type,Sago,Bobo,Mango,Peach,Syrup,Tempe);
+  //add_ximi(1);
+  //delay(15000);
+  //digitalWrite(heat_ENA,HIGH);
+  //delay(60000);
+  finished_menu();
+  delay(10000);
+}
+//---------------------------函数定义---------------------------
+void set_L298N(){
+  pinMode(spin_ENA, OUTPUT);
+  pinMode(solidA_ENA, OUTPUT);
+  pinMode(solidB_ENB, OUTPUT);
+  pinMode(solidC_ENA, OUTPUT);
+  pinMode(solidD_ENB, OUTPUT);
+  pinMode(liquidA_ENA, OUTPUT);
+  pinMode(liquidB_ENB, OUTPUT);
+  pinMode(liquidC_ENA, OUTPUT);
+  pinMode(liquidD_ENA, OUTPUT);
+  pinMode(liquidE_ENB, OUTPUT);
+  pinMode(heat_ENA,OUTPUT);
+  pinMode(32,OUTPUT);
+  pinMode(33,OUTPUT);
+  pinMode(34,OUTPUT);
+  pinMode(35,OUTPUT);
+  pinMode(36,OUTPUT);
+  pinMode(37,OUTPUT);
+  pinMode(38,OUTPUT);
+  pinMode(39,OUTPUT);
+  pinMode(40,OUTPUT);
+  pinMode(41,OUTPUT);
+  pinMode(42,OUTPUT);
+  pinMode(43,OUTPUT);
+  pinMode(44,OUTPUT);
+  pinMode(45,OUTPUT);
+  pinMode(46,OUTPUT);
+  pinMode(47,OUTPUT);
+  pinMode(48,OUTPUT);
+  pinMode(49,OUTPUT);
+  pinMode(50,OUTPUT);
+  pinMode(51,OUTPUT);
+  pinMode(52,OUTPUT);
+  pinMode(53,OUTPUT);
+  digitalWrite(32,HIGH);
+  digitalWrite(34,HIGH);
+  digitalWrite(36,HIGH);
+  digitalWrite(38,HIGH);
+  digitalWrite(40,HIGH);
+  digitalWrite(42,HIGH);
+  digitalWrite(44,HIGH);
+  digitalWrite(46,HIGH);
+  digitalWrite(48,HIGH);
+  digitalWrite(50,HIGH);
+  digitalWrite(52,HIGH);
+  digitalWrite(33,LOW);
+  digitalWrite(35,LOW);
+  digitalWrite(37,LOW);
+  digitalWrite(39,LOW);
+  digitalWrite(41,LOW);
+  digitalWrite(43,LOW);
+  digitalWrite(45,LOW);
+  digitalWrite(47,LOW);
+  digitalWrite(49,LOW);
+  digitalWrite(51,LOW);
+  digitalWrite(53,LOW);
+  
+}
+void set_MicroStepDriver(){
+  pinMode(arm_PUL,OUTPUT);
+  pinMode(arm_DIR,OUTPUT);
+  pinMode(lift_PUL,OUTPUT);
+  pinMode(lift_DIR,OUTPUT);
+}
+void set_others(){
+  pinMode(SW,INPUT_PULLUP);
+  pinMode(trigpin,OUTPUT);
+  pinMode(echopin,OUTPUT);
+}
+void set_oled() {
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.setTextColor(SSD1306_WHITE); // 设置字体颜色    
+}
+
+void choose_mode(){
+  Timer1.initialize(interval);
+  Timer1.attachInterrupt(Isr);
+  attachInterrupt(4,swt,FALLING);
+  choose1=1;
+  choose2=1;
+  sw=1;
+  while(sw!=0){
+    if(choose1==1){
+      online();
+    }
+    else if(choose1==2){
+      offline();
+    }
+  }
+  mode=choose1-1;
+  if(mode==1){
+    main_menu();
+  }
+  else{
+
+  }
+  delay(500);
+  choose2=1;
+  sw=1;
+}
+void choosing(){
+  choose1=1;
+  choose2=1;
+  sw=1;
+  while(sw!=0){
+    if(choose1==1){
+      main_menu();
+    }
+    else if(choose1==2){
+      main_menu2();
+    }
+  }
+  Type=choose1;
+  ximi_menu1();
+  delay(500);
+  choose2=1;
+  sw=1;
+  while(sw!=0){
+    if(choose2==0){
+      ximi_menu();
+    }
+    else if(choose2==1){
+      ximi_menu1();
+    }
+    else if(choose2==2){
+      ximi_menu2();
+    }
+  }
+  Sago=choose2;
+  bobo_menu1();
+  delay(500);
+  choose2=1;
+  sw=1;
+  while(sw!=0){
+    if(choose2==0){
+      bobo_menu();
+    }
+    else if(choose2==1){
+      bobo_menu1();
+    }
+    else if(choose2==2){
+      bobo_menu2();
+    }
+  }
+  Bobo=choose2;
+  if(Type==1){
+    mango_menu1();
+  }
+  else{
+    peach_menu1();
+  }
+ 
+  delay(500);
+  choose2=1;
+  sw=1;
+  if(Type==1){
+    while(sw!=0){
+      if(choose2==0){
+        mango_menu();
+      }
+      else if(choose2==1){
+        mango_menu1();
+      }
+      else if(choose2==2){
+        mango_menu2();
+      }
+    }
+    Mango=choose2;
+    Peach=0;
+    sw=1;
+    choose2=1;
+  }
+  else{
+    while(sw!=0){
+      if(choose2==0){
+        peach_menu();
+      }
+      else if(choose2==1){
+        peach_menu1();
+      }
+      else if(choose2==2){
+        peach_menu2();
+      }
+      
+    }
+    Mango=0;
+    Peach=choose2;
+    sw=1;
+    choose2=1;
+  }
+  sugar_menu2();
+  delay(500);
+  choose2=1;
+  sw=1;
+  while(sw!=0){
+    if(choose2==0){
+      sugar_menu1();
+    }
+    else if(choose2==1){
+      sugar_menu2();
+    }
+    else if(choose2==2){
+      sugar_menu3();
+    }
+  }
+  Syrup=choose2;
+  sw=1;
+  choose1=1;
+  heat_menu();
+  delay(500);
+  choose1=1;
+  sw=1;
+  while(sw!=0){
+    if(choose1==1){
+      heat_menu();
+    }
+    else if(choose1==2){
+      heat_menu1();
+    }
+  }
+  Tempe=choose1-1;
+  choose2=1;
+  choose1=1;
+  sw=1;
+  choose1=1;
+  delay(200);
+  //待补充 糖度菜单 与 制作中，请等待
+  waiting_menu();
+}
+void Isr(){
+  //Serial.println(choose1);
+  
+  //Serial.print("hh\n");
+  x=analogRead(VRX);
+  y=analogRead(VRY);
+  //Serial.print("x:");
+  //Serial.println(x); 
+  //Serial.print("lastx:");
+  //Serial.println(lastx);
+  if(y>900&&choose1==1){
+    choose1=2;
+  }
+  else if(y<100&&choose1==2){
+    choose1=1;
+
+  }
+  //if(x>800&&choose2!=2&&abs(lastx-500)<100){
+  if(x>800&&choose2!=2&&times>30){
+    choose2+=1;
+    times=0;
+  }
+  //else if(x<200&&choose2!=0&&abs(lastx-500)<100){
+  else if(x<200&&choose2!=0&&times>30){
+    choose2-=1;
+    times=0;
+  }
+  lastx=x;
+  times+=1;
+}
+void swt(){
+  //Serial.print("hhh");
+  sw=0;
+}
+  
+void get_dist(){
+  digitalWrite(trigpin,LOW);
+  delayMicroseconds(8);
+  digitalWrite(trigpin,HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigpin,LOW);
+  dist = pulseIn(echopin,HIGH)/58.00;
+}
+void start_spin(){ //让搅拌电机工作
+  analogWrite(spin_ENA,200);
+  delay(8000);  //搅拌8s
+  analogWrite(spin_ENA,0);
+  delay(1000);
+}
+void microstep_go_up(){ //丝杆向上
+  digitalWrite(lift_DIR,HIGH);
+  delayMicroseconds(10); //方向信号应先于脉冲信号至少5us建立
+  for(; microstep_time < 18; ++ microstep_time)
+  {
+    for(int i = 0; i < 6400; ++i)
+    {
+      digitalWrite(lift_PUL,HIGH);
+      delayMicroseconds(50); //脉冲宽度应大于1.2us
+      digitalWrite(lift_PUL,LOW);
+      delayMicroseconds(50);
+    }
+  }
+  microstep_time = 0;
+  delay(1000);
+}
+void microstep_go_down(){ //丝杆向下
+  digitalWrite(lift_DIR,LOW);
+  delayMicroseconds(10); //方向信号应先于脉冲信号至少5us建立
+  for(; microstep_time < 18; ++ microstep_time)
+  {
+    for(int i = 0; i < 6400; ++i)
+    {
+      digitalWrite(lift_PUL,HIGH);
+      delayMicroseconds(50); //脉冲宽度应大于1.2us
+      digitalWrite(lift_PUL,LOW);
+      delayMicroseconds(50);
+    }
+  }
+  microstep_time = 0;
+  delay(1000);
+}
+
+void spin() {//默认丝杆原先在最上方
+  delay(1000);
+  microstep_go_down();
+  start_spin();
+  microstep_go_up();
+}
+void add_ximi(int num){ //添加num次小料，转num*2个格子，参数为电机enable引脚
+  if(num==1||num==2){
+    analogWrite(solidD_ENB,150);
+    delay(1500); 
+    analogWrite(solidD_ENB,0);
+    delay(3000); 
+    analogWrite(solidD_ENB,150);
+    delay(1500);  
+    analogWrite(solidD_ENB,0);
+    delay(3000);
+  }
+}
+void add_bobo(int num){ //添加num次小料，转num*2个格子，参数为电机enable引脚
+  if(num==1||num==2){
+    analogWrite(solidC_ENA,150);
+    delay(2000);  
+    analogWrite(solidC_ENA,0);
+    delay(3000);
+    analogWrite(solidC_ENA,150);
+    delay(2000);
+    analogWrite(solidC_ENA,0);
+    delay(3000);
+  }
+  
+}
+void add_mango(int num){ //添加num次小料，转num*2个格子，参数为电机enable引脚
+  if(num==1||num==2){
+    analogWrite(solidB_ENB,150);
+    delay(1500); 
+    analogWrite(solidB_ENB,0);
+    delay(3000);
+    analogWrite(solidB_ENB,150);
+    delay(1500);  
+    analogWrite(solidB_ENB,0);
+    delay(3000);
+  }
+  
+}
+void add_peach(int num){ //添加num次小料，转num*2个格子，参数为电机enable引脚
+  if(num==1||num==2){
+    analogWrite(solidA_ENA,255);
+    delay(1500);  
+    analogWrite(solidA_ENA,0);
+    delay(3000);
+    analogWrite(solidA_ENA,255);
+    delay(1500); 
+    analogWrite(solidA_ENA,0);
+    delay(3000);
+  }
+}
+void add_milk(){
+  for(int i=0;i<20;i++){
+    analogWrite(liquidA_ENA,255);
+    analogWrite(liquidB_ENB,255);
+    analogWrite(liquidC_ENA,255);
+    delay(milktime);
+    analogWrite(liquidA_ENA,0);
+    analogWrite(liquidB_ENB,0);
+    analogWrite(liquidC_ENA,0);
+    delay(10);
+  }
+}
+void add_syrup(int num){ //添加num份糖浆
+  for(int i=0;i<num;i++){
+    analogWrite(liquidD_ENA,255);
+    delay(syruptime);
+    analogWrite(liquidD_ENA,0);  
+    delay(200);
+  }
+}
+void add_coconut(){ 
+  for(int i=0;i<4;i++){
+  analogWrite(liquidE_ENB,255);
+  delay(coconuttime);
+  }
+  analogWrite(liquidE_ENB,0);  
+  delay(200);
+}
+void heat(int flag){
+
+}
+void heat_open(){
+  digitalWrite(44,HIGH);
+  digitalWrite(45,LOW);
+  analogWrite(heat_ENA,255);
+  delay(3325);
+  analogWrite(heat_ENA,0);
+  delay(500);
+}
+void heat_close(){
+  digitalWrite(44,LOW);
+  digitalWrite(45,HIGH);
+  analogWrite(heat_ENA,255);
+  delay(3400);
+  analogWrite(heat_ENA,0);
+  delay(500);
+}
+void arm_rotate(double angle){ //机械臂顺时针旋转angle度，单位deg
+  digitalWrite(arm_DIR,HIGH);//待确认
+  delayMicroseconds(10); //方向信号应先于脉冲信号至少5us建立
+  for(int i = 0; i < angle/360.0*6400; ++i)
+  {
+    digitalWrite(arm_PUL,HIGH);
+    delayMicroseconds(1000); //脉冲宽度应大于1.2us
+    digitalWrite(arm_PUL,LOW);
+    delayMicroseconds(1000);
+  }
+  delay(500);
+}
+void main_menu() { //选择饮品菜单
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, yin, 16, 16, 1);
+  display.drawBitmap(64, 0, pin, 16, 16, 1);  //请选择饮品
+  display.setCursor(80, 0);
+  display.print(":");
+
+  display.setCursor(5, 20);
+  display.print("1:");
+  display.drawBitmap(32, 20, yang_yang, 16, 16, 1);
+  display.drawBitmap(48, 20, zhi_yang, 16, 16, 1);
+  display.drawBitmap(64, 20, gan_yang, 16, 16, 1);
+  display.drawBitmap(80, 20, lu_yang, 16, 16, 1);  //杨枝甘露
+
+  display.setCursor(5, 36);
+  display.print("2:");
+  display.drawBitmap(32, 36, tao, 16, 16, 1);
+  display.drawBitmap(48, 36, tao, 16, 16, 1);
+  display.drawBitmap(64, 36, gan, 16, 16, 1);
+  display.drawBitmap(80, 36, lu, 16, 16, 1);  //桃桃甘露
+
+  display.display();//开显示   
+}
+void main_menu2() { //选择饮品菜单
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, yin, 16, 16, 1);
+  display.drawBitmap(64, 0, pin, 16, 16, 1);  //请选择饮品
+  display.setCursor(80, 0);
+  display.print(":");
+
+  display.setCursor(5, 20);
+  display.print("1:");
+  display.drawBitmap(32, 20, yang, 16, 16, 1);
+  display.drawBitmap(48, 20, zhi, 16, 16, 1);
+  display.drawBitmap(64, 20, gan, 16, 16, 1);
+  display.drawBitmap(80, 20, lu, 16, 16, 1);  //杨枝甘露
+
+  display.setCursor(5, 36);
+  display.print("2:");
+  display.drawBitmap(32, 36, tao_yang, 16, 16, 1);
+  display.drawBitmap(48, 36, tao_yang, 16, 16, 1);
+  display.drawBitmap(64, 36, gan_yang, 16, 16, 1);
+  display.drawBitmap(80, 36, lu_yang, 16, 16, 1);  //桃桃甘露
+
+  display.display();//开显示   
+}
+void ximi_menu(){
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, xi, 16, 16, 1);
+  display.drawBitmap(64, 0, mi, 16, 16, 1);
+  display.drawBitmap(80, 0, fen, 16, 16, 1);
+  display.drawBitmap(96, 0, shu, 16, 16, 1);  //请选择西米份数
+  display.setCursor(112, 0);
+  display.print(":");
+
+  display.setCursor(2, 32);
+  display.print("0");
+  display.setCursor(50, 32);
+  display.print("1");
+  display.setCursor(98, 32);
+  display.print("2");
+  display.setCursor(2, 50);
+  display.print("^");
+  display.display();//开显示   
+}
+void ximi_menu1(){
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, xi, 16, 16, 1);
+  display.drawBitmap(64, 0, mi, 16, 16, 1);
+  display.drawBitmap(80, 0, fen, 16, 16, 1);
+  display.drawBitmap(96, 0, shu, 16, 16, 1);  //请选择西米份数
+  display.setCursor(112, 0);
+  display.print(":");
+
+  display.setCursor(2, 32);
+  display.print("0");
+  display.setCursor(50, 32);
+  display.print("1");
+  display.setCursor(98, 32);
+  display.print("2");
+  display.setCursor(50, 50);
+  display.print("^");
+  display.display();//开显示   
+}
+void ximi_menu2(){
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, xi, 16, 16, 1);
+  display.drawBitmap(64, 0, mi, 16, 16, 1);
+  display.drawBitmap(80, 0, fen, 16, 16, 1);
+  display.drawBitmap(96, 0, shu, 16, 16, 1);  //请选择西米份数
+  display.setCursor(112, 0);
+  display.print(":");
+
+  display.setCursor(2, 32);
+  display.print("0");
+  display.setCursor(50, 32);
+  display.print("1");
+  display.setCursor(98, 32);
+  display.print("2");
+  display.setCursor(98, 50);
+  display.print("^");
+  display.display();//开显示   
+}
+void bobo_menu(){
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, bo, 16, 16, 1);
+  display.drawBitmap(64, 0, bo, 16, 16, 1);
+  display.drawBitmap(80, 0, fen, 16, 16, 1);
+  display.drawBitmap(96, 0, shu, 16, 16, 1);  //请选择啵啵份数
+  display.setCursor(112, 0);
+  display.print(":");
+
+  display.setCursor(2, 32);
+  display.print("0");
+  display.setCursor(50, 32);
+  display.print("1");
+  display.setCursor(98, 32);
+  display.print("2");
+  display.setCursor(0, 50);
+  display.print("^");
+  display.display();//开显示   
+}
+void bobo_menu1(){
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, bo, 16, 16, 1);
+  display.drawBitmap(64, 0, bo, 16, 16, 1);
+  display.drawBitmap(80, 0, fen, 16, 16, 1);
+  display.drawBitmap(96, 0, shu, 16, 16, 1);  //请选择啵啵份数
+  display.setCursor(112, 0);
+  display.print(":");
+
+  display.setCursor(2, 32);
+  display.print("0");
+  display.setCursor(50, 32);
+  display.print("1");
+  display.setCursor(98, 32);
+  display.print("2");
+  display.setCursor(50, 50);
+  display.print("^");
+  display.display();//开显示   
+}
+void bobo_menu2(){
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, bo, 16, 16, 1);
+  display.drawBitmap(64, 0, bo, 16, 16, 1);
+  display.drawBitmap(80, 0, fen, 16, 16, 1);
+  display.drawBitmap(96, 0, shu, 16, 16, 1);  //请选择啵啵份数
+  display.setCursor(112, 0);
+  display.print(":");
+
+  display.setCursor(2, 32);
+  display.print("0");
+  display.setCursor(50, 32);
+  display.print("1");
+  display.setCursor(98, 32);
+  display.print("2");
+  display.setCursor(98, 50);
+  display.print("^");
+  display.display();//开显示   
+}
+void peach_menu(){
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, tao, 16, 16, 1);
+  display.drawBitmap(64, 0, zi, 16, 16, 1);
+  display.drawBitmap(80, 0, fen, 16, 16, 1);
+  display.drawBitmap(96, 0, shu, 16, 16, 1);  //请选择桃子份数
+  display.setCursor(112, 0);
+  display.print(":");
+
+  display.setCursor(2, 32);
+  display.print("0");
+  display.setCursor(50, 32);
+  display.print("1");
+  display.setCursor(98, 32);
+  display.print("2");
+  display.setCursor(0, 50);
+  display.print("^");
+  display.display();//开显示   
+}
+void peach_menu1(){
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, tao, 16, 16, 1);
+  display.drawBitmap(64, 0, zi, 16, 16, 1);
+  display.drawBitmap(80, 0, fen, 16, 16, 1);
+  display.drawBitmap(96, 0, shu, 16, 16, 1);  //请选择桃子份数
+  display.setCursor(112, 0);
+  display.print(":");
+
+  display.setCursor(2, 32);
+  display.print("0");
+  display.setCursor(50, 32);
+  display.print("1");
+  display.setCursor(98, 32);
+  display.print("2");
+  display.setCursor(50, 50);
+  display.print("^");
+  display.display();//开显示   
+}
+void peach_menu2(){
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, tao, 16, 16, 1);
+  display.drawBitmap(64, 0, zi, 16, 16, 1);
+  display.drawBitmap(80, 0, fen, 16, 16, 1);
+  display.drawBitmap(96, 0, shu, 16, 16, 1);  //请选择桃子份数
+  display.setCursor(112, 0);
+  display.print(":");
+
+  display.setCursor(2, 32);
+  display.print("0");
+  display.setCursor(50, 32);
+  display.print("1");
+  display.setCursor(98, 32);
+  display.print("2");
+  display.setCursor(98, 50);
+  display.print("^");
+  display.display();//开显示   
+}
+void mango_menu(){
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, mang, 16, 16, 1);
+  display.drawBitmap(64, 0, guo, 16, 16, 1);
+  display.drawBitmap(80, 0, fen, 16, 16, 1);
+  display.drawBitmap(96, 0, shu, 16, 16, 1);  //请选择芒果份数
+  display.setCursor(112, 0);
+  display.print(":");
+
+  display.setCursor(2, 32);
+  display.print("0");
+  display.setCursor(50, 32);
+  display.print("1");
+  display.setCursor(98, 32);
+  display.print("2");
+  display.setCursor(0, 50);
+  display.print("^");
+  display.display();//开显示   
+}
+void mango_menu1(){
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, mang, 16, 16, 1);
+  display.drawBitmap(64, 0, guo, 16, 16, 1);
+  display.drawBitmap(80, 0, fen, 16, 16, 1);
+  display.drawBitmap(96, 0, shu, 16, 16, 1);  //请选择芒果份数
+  display.setCursor(112, 0);
+  display.print(":");
+
+  display.setCursor(2, 32);
+  display.print("0");
+  display.setCursor(50, 32);
+  display.print("1");
+  display.setCursor(98, 32);
+  display.print("2");
+  display.setCursor(50, 50);
+  display.print("^");
+  display.display();//开显示   
+}
+void mango_menu2(){
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, mang, 16, 16, 1);
+  display.drawBitmap(64, 0, guo, 16, 16, 1);
+  display.drawBitmap(80, 0, fen, 16, 16, 1);
+  display.drawBitmap(96, 0, shu, 16, 16, 1);  //请选择芒果份数
+  display.setCursor(112, 0);
+  display.print(":");
+
+  display.setCursor(2, 32);
+  display.print("0");
+  display.setCursor(50, 32);
+  display.print("1");
+  display.setCursor(98, 32);
+  display.print("2");
+  display.setCursor(98, 50);
+  display.print("^");
+  display.display();//开显示   
+}
+void heat_menu(){
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, yin, 16, 16, 1);
+  display.drawBitmap(64, 0, pin, 16, 16, 1);
+  display.drawBitmap(80, 0, wen, 16, 16, 1);
+  display.drawBitmap(96, 0, du, 16, 16, 1);  //请选择饮品温度
+  display.setCursor(112, 0);
+  display.print(":");
+
+  display.setCursor(0, 32);
+  display.print("1:");
+  display.drawBitmap(32, 32, chang_yang, 16, 16, 1);
+  display.drawBitmap(48, 32, wen_yang, 16, 16, 1);
+  display.setCursor(0, 48);
+  display.print("2:");
+  display.drawBitmap(32, 48, re, 16, 16, 1);
+
+  display.display();//开显示   
+}
+void heat_menu1(){
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, yin, 16, 16, 1);
+  display.drawBitmap(64, 0, pin, 16, 16, 1);
+  display.drawBitmap(80, 0, wen, 16, 16, 1);
+  display.drawBitmap(96, 0, du, 16, 16, 1);  //请选择饮品温度
+  display.setCursor(112, 0);
+  display.print(":");
+
+  display.setCursor(0, 32);
+  display.print("1:");
+  display.drawBitmap(32, 32, chang, 16, 16, 1);
+  display.drawBitmap(48, 32, wen, 16, 16, 1);
+  display.setCursor(0, 48);
+  display.print("2:");
+  display.drawBitmap(32, 48, re_yang, 16, 16, 1);
+
+  display.display();//开显示   
+}
+void sugar_menu1()      //选中无糖
+{
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, tang, 16, 16, 1);
+  display.drawBitmap(64, 0, du, 16, 16, 1);   //请选择糖度
+  display.setCursor(80, 0);
+  display.print(":");
+
+  display.drawBitmap(0, 32, wu_yang, 16, 16, 1);
+  display.drawBitmap(16, 32, tang_yang, 16, 16, 1); //选中无糖
+
+  display.drawBitmap(48, 32, ban, 16, 16, 1);
+  display.drawBitmap(64, 32, tang, 16, 16, 1);  //半塘
+
+  display.drawBitmap(96, 32, quan, 16, 16, 1);
+  display.drawBitmap(112, 32, tang, 16, 16, 1); //全糖
+
+  display.display();//开显示
+}
+void sugar_menu2()      //选中半糖
+{
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, tang, 16, 16, 1);
+  display.drawBitmap(64, 0, du, 16, 16, 1);   //请选择糖度
+  display.setCursor(80, 0);
+  display.print(":");
+
+  display.drawBitmap(0, 32, wu, 16, 16, 1);
+  display.drawBitmap(16, 32, tang, 16, 16, 1); //无糖
+
+  display.drawBitmap(48, 32, ban_yang, 16, 16, 1);
+  display.drawBitmap(64, 32, tang_yang, 16, 16, 1);  //选中半塘
+
+  display.drawBitmap(96, 32, quan, 16, 16, 1);
+  display.drawBitmap(112, 32, tang, 16, 16, 1); //全糖
+
+  display.display();//开显示   
+}
+void sugar_menu3()      //选中全糖
+{
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, tang, 16, 16, 1);
+  display.drawBitmap(64, 0, du, 16, 16, 1);   //请选择糖度
+  display.setCursor(80, 0);
+  display.print(":");
+
+  display.drawBitmap(0, 32, wu, 16, 16, 1);
+  display.drawBitmap(16, 32, tang, 16, 16, 1); //无糖
+
+  display.drawBitmap(48, 32, ban, 16, 16, 1);
+  display.drawBitmap(64, 32, tang, 16, 16, 1);  //半塘
+
+  display.drawBitmap(96, 32, quan_yang, 16, 16, 1);
+  display.drawBitmap(112, 32, tang_yang, 16, 16, 1); //选中全糖
+
+  display.display();//开显示  
+}
+void waiting_menu()     //制作即将完成请您耐心等待祝您生活愉快
+{
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, zhi_waiting, 16, 16, 1);
+  display.drawBitmap(16, 0, zuo_waiting, 16, 16, 1);
+  display.drawBitmap(32, 0, ji_waiting, 16, 16, 1);
+  display.drawBitmap(48, 0, jiang_waiting, 16, 16, 1);
+  display.drawBitmap(64, 0, wan_waiting, 16, 16, 1);
+  display.drawBitmap(80, 0, cheng_waiting, 16, 16, 1); //制作即将完成
+  display.setCursor(96, 0);
+  display.print("!");
+
+  display.drawBitmap(0, 32, qing, 16, 16, 1);
+  display.drawBitmap(16, 32, nin_waiting, 16, 16, 1);
+  display.drawBitmap(32, 32, nai_waiting, 16, 16, 1);
+  display.drawBitmap(48, 32, xin_waiting, 16, 16, 1);
+  display.drawBitmap(64, 32, deng_waiting, 16, 16, 1);
+  display.drawBitmap(80, 32, dai_waiting, 16, 16, 1); //请您耐心等待
+  display.setCursor(96, 32);
+  display.print(",");
+
+  display.drawBitmap(0, 48, zhu_waiting, 16, 16, 1);
+  display.drawBitmap(16, 48, nin_waiting, 16, 16, 1);
+  display.drawBitmap(32, 48, sheng_waiting, 16, 16, 1);
+  display.drawBitmap(48, 48, huo_waiting, 16, 16, 1);
+  display.drawBitmap(64, 48, yu_waiting, 16, 16, 1);
+  display.drawBitmap(80, 48, kuai_waiting, 16, 16, 1); //祝您生活愉快
+  display.setCursor(96, 48);
+  display.print("!");
+
+  display.display();//开显示
+}
+void finished_menu()    //已完成
+{
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(32, 32, yi_waiting, 16, 16, 1);
+  display.drawBitmap(48, 32, wan_waiting, 16, 16, 1);
+  display.drawBitmap(64, 32, cheng_waiting, 16, 16, 1);  //已完成!
+  display.setCursor(80, 32);
+  display.print("!");
+
+  display.display();//开显示 
+}
+void online()      //选中网页点单
+{
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, dian_choose, 16, 16, 1);
+  display.drawBitmap(64, 0, dan_choose, 16, 16, 1);
+  display.drawBitmap(80, 0, mo_choose, 16, 16, 1);
+  display.drawBitmap(96, 0, shi_choose, 16, 16, 1);  //请选择点单模式
+  display.setCursor(112, 0);
+  display.print(":");
+
+  display.drawBitmap(0, 32, wang_choose_yang, 16, 16, 1);
+  display.drawBitmap(16, 32, ye_choose_yang, 16, 16, 1); //选中网页
+
+  display.drawBitmap(0, 48, xian_choose, 16, 16, 1);
+  display.drawBitmap(16, 48, shi_choose1, 16, 16, 1); 
+  display.drawBitmap(32, 48, ping_choose, 16, 16, 1);
+
+  display.display();//开显示  
+}
+
+void offline()      //选中oled显示屏点单
+{
+  display.clearDisplay();//清屏
+  display.setTextSize(2); //设置字体大小
+
+  display.drawBitmap(0, 0, qing, 16, 16, 1);
+  display.drawBitmap(16, 0, xuan, 16, 16, 1);
+  display.drawBitmap(32, 0, ze, 16, 16, 1);
+  display.drawBitmap(48, 0, dian_choose, 16, 16, 1);
+  display.drawBitmap(64, 0, dan_choose, 16, 16, 1);
+  display.drawBitmap(80, 0, mo_choose, 16, 16, 1);
+  display.drawBitmap(96, 0, shi_choose, 16, 16, 1);  //请选择点单模式
+  display.setCursor(112, 0);
+  display.print(":");
+
+  display.drawBitmap(0, 32, wang_choose, 16, 16, 1);
+  display.drawBitmap(16, 32, ye_choose, 16, 16, 1);
+
+  display.drawBitmap(0, 48, xian_choose_yang, 16, 16, 1);
+  display.drawBitmap(16, 48, shi_choose_yang, 16, 16, 1); 
+  display.drawBitmap(32, 48, ping_choose_yang, 16, 16, 1);  //选中显示屏
+
+  display.display();//开显示  
+}
+
+void make_drink(int type,int sago,int bobo,int mango,int peach,int syrup,int tempe){
+  arm_rotate(44);
+  add_mango(mango);//添加芒果
+  
+  arm_rotate(47);
+  add_peach(peach);//添加桃子
+  
+  arm_rotate(45);
+  add_ximi(sago); //添加西米
+
+  arm_rotate(44);
+  add_bobo(bobo); //添加啵啵
+
+  arm_rotate(45);
+  if(tempe==1){
+    for(int i=0;i<20;i++){
+      delay(6000);
+    }
+  }
+  add_milk(); 
+  if(tempe==1){
+    heat_close();
+  }                //添加牛奶
+  arm_rotate(45);
+  add_syrup(syrup);           //添加糖浆      
+  arm_rotate(45);
+  spin();                     //搅拌
+  arm_rotate(45);                    //加热
+}
+void decode_str(String info)  //解码信息，给全局变量赋新值
+{
+  Type = info.c_str()[1] - '0';
+  Sago = info.c_str()[2] - '0';
+  Bobo = info.c_str()[3] - '0';
+  Mango = info.c_str()[4] - '0';
+  Peach = info.c_str()[5] - '0';
+  Syrup = info.c_str()[6] - '0';
+  Tempe = info.c_str()[7] - '0';
+  Serial.println("Reset!");
+}

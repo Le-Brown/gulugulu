@@ -1,0 +1,1 @@
+.makerbot文件为使用makerbot打印机的工程文件，STL文件夹中存放了原始的3D建模文件

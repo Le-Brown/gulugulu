@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8"></meta><title>gulugulu饮料机点单</title></head>
+	<body>
+		<h2 align="center">gulugulu饮料机点单界面</h2>
+		<br>
+		<h3 align="center">饮品制作中，请耐心等待</h3>
+		
+</body>
+</html>

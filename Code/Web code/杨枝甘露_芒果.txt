@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8"></meta><title>gulugulu饮料机点单</title></head>
+	<body>
+		<h2 align="center">gulugulu饮料机点单界面</h2>
+		<br>
+		<h3 align="center">请选择芒果份数</h3>
+		<form method="post" action=/m0><table align="center"><tr><td>  </td><td>
+			<button name="0" type="submit" value="1">0</button>
+			</td></tr>
+		   </table>
+	</form>
+		<form method="post" action=/m1><table align="center"><tr><td>  </td><td>
+			<button name="1" type="submit" value="1">1</button>
+			</td></tr>
+		   </table>
+	</form>
+		<form method="post" action=/m2><table align="center"><tr><td>  </td><td>
+			<button name="2" type="submit" value="1">2</button>
+			</td></tr>
+		   </table>
+	</form>
+
+</body>
+</html>

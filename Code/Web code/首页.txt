@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8"></meta><title>gulugulu饮料机点单</title></head>
+	<body background="1.jpg" style="background-repeat:no-repeat;background-attachment:fixed;background-size:100% 100%;>
+		<br>
+		<h2 align="center">  </h2>
+		<h2 align="center"><font size="7">gulugulu饮料机点单界面</font></h2>
+		<br>
+		<h3 align="center">请选择您的饮品</h3>
+		<form method="post" action=/yangzhiganlu><table align="center"><tr><td>  </td><td>
+			<button name="yangzhiganlu" type="submit" value="1">杨枝甘露</button>
+			</td></tr>
+		   </table>
+	</form>
+		<form method="post" action=/taotaoganlu><table align="center"><tr><td>  </td><td>
+			<button name="taotaoganlu" type="submit" value="1">桃桃甘露</button>
+			</td></tr>
+		   </table>
+	</form>
+
+</body>
+</html>
